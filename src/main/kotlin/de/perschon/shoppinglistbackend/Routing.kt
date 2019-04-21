@@ -1,6 +1,7 @@
 package de.perschon.shoppinglistbackend
 
 import de.perschon.shoppinglistbackend.products.ProductController
+import de.perschon.shoppinglistbackend.shoppinglists.ShoppingListController
 import io.ktor.application.ApplicationCall
 import io.ktor.response.respond
 import io.ktor.routing.Routing
@@ -10,14 +11,18 @@ import org.koin.ktor.ext.get as inject
 
 fun routes(): Routing.() -> Unit {
     return {
+        val products = inject<ProductController>()
+        val shoppingLists = inject<ShoppingListController>()
+
         get("/health", ::health)
 
-        run {
-            val controller = inject<ProductController>()
+        get ("/products", products::getAll)
+        post("/products", products::create)
+        get ("/products/{id}", products::getById)
 
-            get ("/products", controller::getAllProducts)
-            post("/products", controller::create)
-        }
+        get ("/shopping-lists", shoppingLists::getAll)
+        post("/shopping-lists", shoppingLists::create)
+        get ("/shopping-lists/{id}", shoppingLists::getById)
     }
 }
 

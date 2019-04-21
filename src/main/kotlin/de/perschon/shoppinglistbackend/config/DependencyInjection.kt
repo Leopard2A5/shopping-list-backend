@@ -4,6 +4,8 @@ import com.uchuhimo.konf.Config
 import de.perschon.shoppinglistbackend.products.Product
 import de.perschon.shoppinglistbackend.products.ProductController
 import de.perschon.shoppinglistbackend.products.ProductService
+import de.perschon.shoppinglistbackend.shoppinglists.ShoppingListController
+import de.perschon.shoppinglistbackend.shoppinglists.ShoppingListService
 import org.koin.dsl.module.module
 import org.koin.standalone.StandAloneContext.startKoin
 import org.litote.kmongo.coroutine.CoroutineClient
@@ -18,6 +20,9 @@ fun appModule(config: Config) = module {
 
     single { ProductService() }
     single { ProductController(get()) }
+
+    single { ShoppingListService() }
+    single { ShoppingListController(get()) }
 }
 
 fun initDependencyInjection(config: Config) {
