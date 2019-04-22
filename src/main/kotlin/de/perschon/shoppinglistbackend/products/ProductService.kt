@@ -1,13 +1,16 @@
 package de.perschon.shoppinglistbackend.products
 
+import de.perschon.shoppinglistbackend.shoppinglists.ShoppingListService
 import org.koin.standalone.KoinComponent
-import org.koin.standalone.get
-import org.litote.kmongo.coroutine.CoroutineCollection
+import org.koin.standalone.inject
+import org.litote.kmongo.coroutine.CoroutineDatabase
 import org.litote.kmongo.eq
 
-class ProductService : KoinComponent {
+class ProductService(private val shoppingListService: ShoppingListService) : KoinComponent {
 
-    private val collection by lazy { get<CoroutineCollection<Product>>() }
+    private val collection by lazy {
+        inject<CoroutineDatabase>().value.getCollection<Product>()
+    }
 
     suspend fun getAll(): List<Product> = collection.find().toList()
 
@@ -17,6 +20,11 @@ class ProductService : KoinComponent {
         return prod.also {
             collection.insertOne(it)
         }
+    }
+
+    suspend fun delete(id: String) {
+        collection.deleteOne(Product::id eq id)
+        shoppingListService.deleteProduct(prodId = id)
     }
 
 }

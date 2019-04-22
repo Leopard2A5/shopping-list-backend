@@ -23,4 +23,9 @@ class ShoppingListController(private val service: ShoppingListService) {
         call.respond(service.create(list))
     }
 
+    suspend fun delete(call: ApplicationCall) {
+        service.delete(call.parameters["id"]!!)
+        call.respond(HttpStatusCode.NoContent)
+    }
+
 }
