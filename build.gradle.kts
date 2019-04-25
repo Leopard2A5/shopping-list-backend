@@ -30,6 +30,7 @@ dependencies {
     compile("com.uchuhimo:konf:0.13.2")
     compile("org.koin:koin-ktor:1.0.2")
     compile("org.litote.kmongo:kmongo-coroutine:3.10.1")
+    compile("com.graphql-java:graphql-java:12.0")
 }
 
 tasks.withType<KotlinCompile> {
