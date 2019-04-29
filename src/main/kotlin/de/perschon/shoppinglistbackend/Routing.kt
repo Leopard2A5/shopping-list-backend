@@ -1,5 +1,8 @@
 package de.perschon.shoppinglistbackend
 
+import de.perschon.shoppinglistbackend.graphql.GraphQLRequest
+import de.perschon.shoppinglistbackend.graphql.GraphQLResponse
+import de.perschon.shoppinglistbackend.graphql.buildGraphQL
 import de.perschon.shoppinglistbackend.products.ProductController
 import de.perschon.shoppinglistbackend.shoppinglists.ShoppingListController
 import de.perschon.shoppinglistbackend.utils.del
