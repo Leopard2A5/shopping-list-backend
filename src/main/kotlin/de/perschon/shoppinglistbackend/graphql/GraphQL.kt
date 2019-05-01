@@ -2,12 +2,13 @@ package de.perschon.shoppinglistbackend.graphql
 
 import de.perschon.shoppinglistbackend.products.ProductService
 import graphql.GraphQL
-import graphql.schema.StaticDataFetcher
 import graphql.schema.idl.RuntimeWiring.newRuntimeWiring
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
+import graphql.schema.idl.TypeRuntimeWiring
 import kotlinx.coroutines.runBlocking
 import org.koin.standalone.StandAloneContext
+import java.util.function.UnaryOperator
 import kotlin.coroutines.suspendCoroutine
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.declaredFunctions
@@ -18,7 +19,6 @@ fun buildGraphQL(): GraphQL {
 
     val schemaString = """
         type Query {
-            hello: String!
             products: [Product!]!
             product(id: String!): Product
         }
@@ -33,37 +33,37 @@ fun buildGraphQL(): GraphQL {
     val typeDefinitionRegistry = schemaParser.parse(schemaString)
 
     val runtimeWiring = newRuntimeWiring()
-        .type("Query") { builder ->
-            builder.dataFetcher("hello", StaticDataFetcher("world"))
-
-            Query::class.declaredFunctions.forEach {
-                builder.dataFetcher(it.name) { env ->
-                    runBlocking {
-                        suspendCoroutine<Any?> { cont ->
-                            val params = it.parameters
-                                .sortedBy(KParameter::index)
-                                .subList(1, it.parameters.size)
-                                .map { env.arguments[it.name] }
-                                .toTypedArray()
-
-                            it.call(query, cont, *params)
-                        }
-                    }
-                }
-            }
-
-            builder.dataFetcher("product") { env ->
-                runBlocking {
-                    productService.getById(env.arguments["id"] as String)
-                }
-            }
-        }
+        .type("Query", resolveAllFunctions(query))
         .build()
 
     val schemaGenerator = SchemaGenerator()
     val graphQLSchema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring)
 
     return GraphQL.newGraphQL(graphQLSchema).build()
+}
+
+fun resolveAllFunctions(instance: Any): UnaryOperator<TypeRuntimeWiring.Builder> {
+    return UnaryOperator { builder ->
+        instance::class.declaredFunctions.forEach { function ->
+            val functionArguments = function.parameters
+                .sortedBy(KParameter::index)
+                .subList(1, function.parameters.size)
+
+            builder.dataFetcher(function.name) { env ->
+                runBlocking {
+                    suspendCoroutine<Any?> { cont ->
+                        val params = functionArguments
+                            .map { env.arguments[it.name] }
+                            .toTypedArray()
+
+                        function.call(instance, *params, cont)
+                    }
+                }
+            }
+        }
+
+        builder
+    }
 }
 
 data class GraphQLRequest(
