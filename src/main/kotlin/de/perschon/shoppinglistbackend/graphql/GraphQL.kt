@@ -1,6 +1,9 @@
 package de.perschon.shoppinglistbackend.graphql
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import de.perschon.shoppinglistbackend.config.objectMapper
 import graphql.GraphQL
+import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.RuntimeWiring.newRuntimeWiring
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
@@ -13,9 +16,13 @@ import java.util.function.UnaryOperator
 import kotlin.coroutines.suspendCoroutine
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.declaredFunctions
+import kotlin.reflect.jvm.javaType
+
+private val om = objectMapper()
 
 fun buildGraphQL(): GraphQL {
     val query = StandAloneContext.getKoin().koinContext.get<Query>()
+    val mutation = StandAloneContext.getKoin().koinContext.get<Mutation>()
 
     val schemaString = File(object{}.javaClass.classLoader.getResource("schema").toURI()).let { file ->
         file.list()
@@ -29,6 +36,7 @@ fun buildGraphQL(): GraphQL {
 
     val runtimeWiring = newRuntimeWiring()
         .type("Query", resolveAllFunctions(query))
+        .type("Mutation", resolveAllFunctions(mutation))
         .build()
 
     val schemaGenerator = SchemaGenerator()
@@ -48,9 +56,8 @@ fun resolveAllFunctions(instance: Any): UnaryOperator<TypeRuntimeWiring.Builder>
                 runBlocking {
                     suspendCoroutine<Any?> { cont ->
                         val params = functionArguments
-                            .map { env.arguments[it.name] }
+                            .map(env::getArgument)
                             .toTypedArray()
-
                         function.call(instance, *params, cont)
                     }
                 }
@@ -58,6 +65,15 @@ fun resolveAllFunctions(instance: Any): UnaryOperator<TypeRuntimeWiring.Builder>
         }
 
         builder
+    }
+}
+
+fun DataFetchingEnvironment.getArgument(
+    param: KParameter
+): Any? {
+    return when(val tmp = arguments[param.name]) {
+        tmp is Map<*, *> -> om.convertValue(tmp, param.type.javaType as Class<*>)
+        else -> tmp
     }
 }
 

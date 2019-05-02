@@ -1,6 +1,7 @@
 package de.perschon.shoppinglistbackend.config
 
 import com.uchuhimo.konf.Config
+import de.perschon.shoppinglistbackend.graphql.Mutation
 import de.perschon.shoppinglistbackend.graphql.Query
 import de.perschon.shoppinglistbackend.products.ProductController
 import de.perschon.shoppinglistbackend.products.ProductService
@@ -23,6 +24,7 @@ fun appModule(config: Config) = module {
     single { ShoppingListController(get()) }
 
     single { Query() }
+    single { Mutation() }
 }
 
 fun initDependencyInjection(config: Config) {
